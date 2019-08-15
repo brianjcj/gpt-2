@@ -15,9 +15,13 @@ import model, sample, encoder
 from load_dataset import load_dataset, Sampler
 from accumulate import AccumulatingOptimizer
 import memory_saving_gradients
+import sp_encoder
 
 CHECKPOINT_DIR = 'checkpoint'
 SAMPLE_DIR = 'samples'
+
+g_corpus_name = 'channel'
+# g_corpus_name = 'hongloumeng'
 
 
 parser = argparse.ArgumentParser(
@@ -51,6 +55,9 @@ parser.add_argument('--val_batch_size', metavar='SIZE', type=int, default=2, hel
 parser.add_argument('--val_batch_count', metavar='N', type=int, default=40, help='Number of batches for validation.')
 parser.add_argument('--val_every', metavar='STEPS', type=int, default=0, help='Calculate validation loss every STEPS steps.')
 
+parser.add_argument('--sp_model_file', default='cache-sp/{}/channel_sp_model.model'.format(g_corpus_name), type=str,
+                    required=False, help='sp model file')
+
 
 def maketree(path):
     try:
@@ -70,10 +77,13 @@ def randomize(context, hparams, p):
 
 def main():
     args = parser.parse_args()
-    enc = encoder.get_encoder(args.model_name)
+    # enc = encoder.get_encoder(args.model_name)
+    enc = sp_encoder.get_encoder(args.sp_model_file)
     hparams = model.default_hparams()
     with open(os.path.join('models', args.model_name, 'hparams.json')) as f:
         hparams.override_from_dict(json.load(f))
+
+    hparams.n_vocab = 32000
 
     if args.sample_length > hparams.n_ctx:
         raise ValueError(
@@ -158,16 +168,19 @@ def main():
             ckpt = tf.train.latest_checkpoint(
                 os.path.join(CHECKPOINT_DIR, args.run_name))
             if ckpt is None:
+                pass
                 # Get fresh GPT weights if new run.
-                ckpt = tf.train.latest_checkpoint(
-                    os.path.join('models', args.model_name))
+                # ckpt = tf.train.latest_checkpoint(
+                #     os.path.join('models', args.model_name))
         elif args.restore_from == 'fresh':
             ckpt = tf.train.latest_checkpoint(
                 os.path.join('models', args.model_name))
         else:
             ckpt = tf.train.latest_checkpoint(args.restore_from)
-        print('Loading checkpoint', ckpt)
-        saver.restore(sess, ckpt)
+
+        if ckpt is not None:
+            print('Loading checkpoint', ckpt)
+            saver.restore(sess, ckpt)
 
         print('Loading dataset...')
         chunks = load_dataset(enc, args.dataset, args.combine)

@@ -7,19 +7,27 @@ import argparse
 import numpy as np
 
 import encoder
+import sp_encoder
 from load_dataset import load_dataset
+
+g_corpus_name = 'channel'
+# g_corpus_name = 'hongloumeng'
 
 parser = argparse.ArgumentParser(
     description='Pre-encode text files into tokenized training set.',
     formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parser.add_argument('--model_name', metavar='MODEL', type=str, default='117M', help='Pretrained model name')
+parser.add_argument('--sp_model_file', default='cache-sp/{}/channel_sp_model.model'.format(g_corpus_name), type=str,
+                    required=False, help='sp model file')
 parser.add_argument('--combine', metavar='CHARS', type=int, default=50000, help='Concatenate files with <|endoftext|> separator into chunks of this minimum size')
 parser.add_argument('in_text', metavar='PATH', type=str, help='Input file, directory, or glob pattern (utf-8 text).')
 parser.add_argument('out_npz', metavar='OUT.npz', type=str, help='Output file path')
 
+
 def main():
     args = parser.parse_args()
-    enc = encoder.get_encoder(args.model_name)
+    # enc = encoder.get_encoder(args.model_name)
+    enc = sp_encoder.get_encoder(args.sp_model_file)
     print('Reading files')
     chunks = load_dataset(enc, args.in_text, args.combine)
     print('Writing', args.out_npz)

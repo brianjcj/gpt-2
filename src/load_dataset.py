@@ -36,7 +36,8 @@ def load_dataset(enc, path, combine):
                 token_chunks.append(tokens)
                 raw_text = ''
             else:
-                raw_text += '<|endoftext|>'
+                pass
+                # raw_text += '<|endoftext|>'  # TODO
     if raw_text:
         tokens = np.stack(enc.encode(raw_text))
         token_chunks.append(tokens)
